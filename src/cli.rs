@@ -9,13 +9,13 @@ use clap::Parser;
 pub struct Args {
     /// Path to input image
     #[arg(short, long)]
-    input: PathBuf,
+    pub input: PathBuf,
 
     /// Path to output image
     #[arg(short, long)]
-    output: PathBuf,
+    pub output: PathBuf,
 
     /// Kernel to apply to image
     #[arg(value_enum, short, long)]
-    kernel: Kernel,
+    pub kernel: Kernel,
 }

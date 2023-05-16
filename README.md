@@ -73,9 +73,20 @@ In most project I always include (when applicable) a set of libraries:
 
 _The list is longer, but these applied to this project._
 
+## Considerations
+
+### Edge handling
+
+If a kernel would access a pixel outside the width / height of an image,
+a constant color is used (black, value zero).
+
 ## Future
 
 ### Performance
 
 * Checkout the [Rust Performance Book](https://nnethercote.github.io/perf-book/) for tips
 * Try employing [Flamegraph](https://github.com/jonhoo/inferno)s 
+
+### Flexibility
+
+* Allow changing the behaviour of edge handling
