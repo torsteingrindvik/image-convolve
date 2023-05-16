@@ -8,8 +8,10 @@ use tracing::info;
 
 use crate::prelude::*;
 
+/// The type of  imagxelewe will working with.
+pub type ImagePixel = image::Rgb<f32>;
 /// The type of image we will working with.
-pub type Image = image::Rgb32FImage;
+pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
 
 /// The common strategy convolution "backends" should implement.
 pub trait ConvolveStrategy {
