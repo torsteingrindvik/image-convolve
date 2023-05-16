@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use clap::ValueEnum;
 
 /// Pre-defined kernels.
@@ -5,8 +7,6 @@ use clap::ValueEnum;
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Kernel {
     /// The identity operation.
-    /// Should leave the image as-is.
-    /// TODO: A good test would be using this and hashing the in/out to see that we're unaffected.
     Identity,
 
     /// Edge detection version 1.
@@ -23,6 +23,12 @@ pub enum Kernel {
 
     /// Gaussian blur.
     GaussianBlur,
+}
+
+impl Display for Kernel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 impl Kernel {

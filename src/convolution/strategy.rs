@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs::File, io::BufReader, path::Path};
+use std::{fs::File, io::BufReader, path::Path};
 
 use image::{
     codecs::{jpeg::JpegDecoder, png::PngDecoder},
@@ -17,30 +17,37 @@ pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
 pub trait ConvolveStrategy {
     /// Given an input image and an equally sized output image,
     /// perform convolution with the given [`Kernel`].
-    fn convolve(input: Image, output: &mut Image, _kernel: Kernel) -> Result<()>;
+    fn convolve(input: Image, output: &mut Image, kernel: Kernel) -> Result<()>;
 }
 
-/// Convolve the input file by using the given backend.
-pub fn convolve<Backend: ConvolveStrategy>(
-    input: &Path,
-    output: &Path,
-    kernel: Kernel,
-) -> Result<()> {
+/// Prepares for convolution by creating an image buffer from the
+/// input path and allocating an equally sized output image buffer for writing to.
+pub fn prepare<P: AsRef<Path>>(input: P) -> Result<(Image, Image)> {
     // Check that we're able to find the extensions and that they're equal
     info!("Reading extensions");
-    let ext = check_ext(input, output)?;
+    let ext = extension(input.as_ref())?;
 
     // Read the input image
     // TODO: Either mmap or mmap via CLI flag?
-
     info!("Reading input file");
     let reader = BufReader::new(File::open(input)?);
 
     info!("Decoding input file");
     let image_input: Image = get_dynamic_image(reader, &ext)?.into_rgb32f();
 
-    info!("Preparing output");
-    let mut image_output = Image::new(image_input.width(), image_input.height());
+    info!("Preparing output image buffer");
+    let image_output = Image::new(image_input.width(), image_input.height());
+
+    Ok((image_input, image_output))
+}
+
+/// Convolve the input file by using the given backend.
+pub fn convolve<P: AsRef<Path>, Backend: ConvolveStrategy>(
+    input: P,
+    output: P,
+    kernel: Kernel,
+) -> Result<()> {
+    let (image_input, mut image_output) = prepare(input)?;
 
     info!("Executing convolution");
     Backend::convolve(image_input, &mut image_output, kernel)?;
@@ -56,25 +63,14 @@ pub fn convolve<Backend: ConvolveStrategy>(
 
 // Check if input/output extensions match, error out if not.
 // Stringify the extension for simplicity.
-fn check_ext(input: &Path, output: &Path) -> Result<String> {
-    match (input.extension(), output.extension()) {
-        (Some(i), Some(o)) => {
-            // It's easier to deal with strings than OS strings.
-            let simplify = |os_str: &OsStr| os_str.to_string_lossy().to_string();
-            let i = simplify(i);
-            let o = simplify(o);
-
-            if i != o {
-                return Err(Error::Usage(format!(
-                    "Input extension `{i}` does not match output extension `{o}`",
-                )));
-            }
-
-            Ok(i)
-        }
-        _ => Err(Error::Limitation(
-            "Cannot guess input/output formats- please use file extensions".into(),
-        )),
+fn extension(p: &Path) -> Result<String> {
+    if let Some(ext) = p.extension() {
+        Ok(ext.to_string_lossy().to_string())
+    } else {
+        Err(Error::Usage(format!(
+            "Cannot get extension from path `{}`",
+            p.to_string_lossy()
+        )))
     }
 }
 
