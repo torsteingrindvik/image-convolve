@@ -2,16 +2,20 @@ use std::{ffi::OsStr, fs::File, io::BufReader, path::Path};
 
 use image::{
     codecs::{jpeg::JpegDecoder, png::PngDecoder},
-    DynamicImage, RgbImage,
+    DynamicImage,
 };
+use tracing::info;
 
 use crate::prelude::*;
+
+/// The type of image we will working with.
+pub type Image = image::Rgb32FImage;
 
 /// The common strategy convolution "backends" should implement.
 pub trait ConvolveStrategy {
     /// Given an input image and an equally sized output image,
     /// perform convolution with the given [`Kernel`].
-    fn convolve(input: RgbImage, output: &mut RgbImage, _kernel: Kernel) -> Result<()>;
+    fn convolve(input: Image, output: &mut Image, _kernel: Kernel) -> Result<()>;
 }
 
 /// Convolve the input file by using the given backend.
@@ -21,18 +25,29 @@ pub fn convolve<Backend: ConvolveStrategy>(
     kernel: Kernel,
 ) -> Result<()> {
     // Check that we're able to find the extensions and that they're equal
+    info!("Reading extensions");
     let ext = check_ext(input, output)?;
 
     // Read the input image
     // TODO: Either mmap or mmap via CLI flag?
+
+    info!("Reading input file");
     let reader = BufReader::new(File::open(input)?);
 
-    let image_input = get_dynamic_image(reader, &ext)?.into_rgb8();
-    let mut image_output = RgbImage::new(image_input.width(), image_input.height());
+    info!("Decoding input file");
+    let image_input: Image = get_dynamic_image(reader, &ext)?.into_rgb32f();
 
+    info!("Preparing output");
+    let mut image_output = Image::new(image_input.width(), image_input.height());
+
+    info!("Executing convolution");
     Backend::convolve(image_input, &mut image_output, kernel)?;
 
-    image_output.save(&output)?;
+    info!("Converting buffers to RGB8 for saving output");
+    let image_output = DynamicImage::ImageRgb32F(image_output).to_rgb8();
+
+    info!("Saving result");
+    image_output.save(output)?;
 
     Ok(())
 }

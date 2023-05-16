@@ -10,3 +10,6 @@ pub mod backends {
 /// Holds the common trait for backends,
 /// as well as the strategy implementation.
 pub mod strategy;
+
+/// Utilities for helping convolution.
+pub(crate) mod util;
