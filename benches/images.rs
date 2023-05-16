@@ -1,12 +1,15 @@
 // Small input images
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use image_convolve::convolution::backends::cpu_naive::CpuNaive;
-use image_convolve::{convolution::strategy::prepare, prelude::*};
 
-fn criterion_benchmark(c: &mut Criterion) {
-    let (input, output) = prepare("images/animal.png").unwrap();
+use image_convolve::{
+    convolution::{backends::cpu_naive::CpuNaive, strategy::prepare},
+    prelude::*,
+};
 
-    let mut group = c.benchmark_group("Small Input Image");
+fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
+    let (input, output) = prepare(input).unwrap();
+
+    let mut group = c.benchmark_group(name);
 
     for kernel in [
         Kernel::Identity,
@@ -34,5 +37,17 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, criterion_benchmark);
+fn small(c: &mut Criterion) {
+    impl_bench(c, "Small Image", "images/animal.png");
+}
+
+fn medium(c: &mut Criterion) {
+    impl_bench(c, "Medium Image", "images/camera.jpg");
+}
+
+fn large(c: &mut Criterion) {
+    impl_bench(c, "Large Image", "images/gecko.jpg");
+}
+
+criterion_group!(benches, small, medium, large);
 criterion_main!(benches);
