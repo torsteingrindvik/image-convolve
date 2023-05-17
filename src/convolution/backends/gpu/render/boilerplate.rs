@@ -5,8 +5,6 @@ use tracing::info;
 
 use super::texture::{self, DiffuseTexture, OutputBuffer, RenderTexture};
 use crate::prelude::*;
-use std::fs::File;
-use std::io::Write;
 use std::iter;
 use std::time::Instant;
 
@@ -39,9 +37,10 @@ pub async fn do_it() -> Result<()> {
     let start = Instant::now();
     info!("Next: Render {}us", (Instant::now() - start).as_micros());
     let submission_index = state.render().map_err(|e| Error::Gpu(format!("{e:?}")))?;
+    let buf = &state.output_buffer;
 
     info!("Next: Await {}us", (Instant::now() - start).as_micros());
-    let buffer_slice = state.output_buffer.buffer.slice(..);
+    let buffer_slice = buf.buffer.slice(..);
     let (tx, rx) = oneshot::channel();
     buffer_slice.map_async(wgpu::MapMode::Read, move |res| tx.send(res).unwrap());
 
@@ -54,36 +53,43 @@ pub async fn do_it() -> Result<()> {
     info!("Next: Get map {}us", (Instant::now() - start).as_micros());
     let padded_buffer = buffer_slice.get_mapped_range();
 
-    info!(
-        "Next: Create file {}us",
-        (Instant::now() - start).as_micros()
-    );
-    let f = File::create("test.png").unwrap();
+    // info!(
+    //     "Next: Create file {}us",
+    //     (Instant::now() - start).as_micros()
+    // );
+    // let f = File::create("test.png").unwrap();
 
     info!(
-        "Next: Encode setup {}us",
+        "Next: Move buffer to CPU vec without padding {}us",
         (Instant::now() - start).as_micros()
     );
-    let mut png_encoder = png::Encoder::new(
-        f,
-        state.output_buffer.dimensions.width as u32,
-        state.output_buffer.dimensions.height as u32,
-    );
-    png_encoder.set_depth(png::BitDepth::Eight);
-    png_encoder.set_color(png::ColorType::Rgba);
-    let mut png_writer = png_encoder
-        .write_header()
-        .unwrap()
-        .into_stream_writer_with_size(state.output_buffer.dimensions.unpadded_bytes_per_row)
-        .unwrap();
 
-    // chunky
-    info!("Next: Encode {}us", (Instant::now() - start).as_micros());
-    for chunk in padded_buffer.chunks(state.output_buffer.dimensions.padded_bytes_per_row) {
-        png_writer
-            .write_all(&chunk[..state.output_buffer.dimensions.unpadded_bytes_per_row])
-            .unwrap();
-    }
+    let mut out = Vec::with_capacity(buf.dimensions.unpadded_bytes_per_row * buf.dimensions.height);
+
+    padded_buffer
+        .chunks(buf.dimensions.padded_bytes_per_row)
+        .for_each(|row| {
+            out.extend_from_slice(&row[..buf.dimensions.unpadded_bytes_per_row]);
+        });
+    // .map(|&hmm| [hmm[..state.output_buffer.dimensions.unpadded_bytes_per_row]]);
+
+    // for chunk in padded_buffer.chunks(state.output_buffer.dimensions.padded_bytes_per_row) {
+    //     png_writer
+    //         .write_all(&chunk[..state.output_buffer.dimensions.unpadded_bytes_per_row])
+    //         .unwrap();
+    // }
+    info!(
+        "Next: Store to disk {}us",
+        (Instant::now() - start).as_micros()
+    );
+
+    image::save_buffer(
+        "test.jpg",
+        &out,
+        buf.dimensions.width as u32,
+        buf.dimensions.height as u32,
+        image::ColorType::Rgba8,
+    )?;
 
     info!("Done {}us", (Instant::now() - start).as_micros());
 
@@ -149,8 +155,8 @@ impl State {
         // let diffuse_texture =
         //     DiffuseTexture::from_bytes(&device, &queue, diffuse_bytes, "Gecko").unwrap();
 
-        // let img_bytes = include_bytes!("../../../../../images/camera.jpg");
-        let img_bytes = include_bytes!("../../../../../images/gecko.jpg");
+        let img_bytes = include_bytes!("../../../../../images/camera.jpg");
+        // let img_bytes = include_bytes!("../../../../../images/gecko.jpg");
         let img = image::load_from_memory(img_bytes)?;
 
         let (diffuse_texture, render_texture, output_buffer) =
