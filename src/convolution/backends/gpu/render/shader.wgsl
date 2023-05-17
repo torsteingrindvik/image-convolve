@@ -16,11 +16,21 @@ fn fullscreen_vertex_shader(@builtin(vertex_index) vertex_index: u32) -> Fullscr
 }
 
 @group(0) @binding(0)
+var<uniform> pixel_size: vec2<f32>;
+@group(0) @binding(1)
 var t_diffuse: texture_2d<f32>;
-@group(0)@binding(1)
+@group(0)@binding(2)
 var s_diffuse: sampler;
+
+
 
 @fragment
 fn frag_shader(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(t_diffuse, s_diffuse, in.uv);
+	var uv = in.uv;
+
+	if (in.uv.x > 0.5) {
+		uv.y = 1. - uv.y;
+	}
+
+	return textureSample(t_diffuse, s_diffuse, uv);
 }
