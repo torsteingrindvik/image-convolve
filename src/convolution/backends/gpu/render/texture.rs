@@ -4,22 +4,92 @@ use crate::prelude::*;
 
 use image::GenericImageView;
 
-pub struct Texture {
+use super::BufferDimensions;
+
+pub fn prepare(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    img: &image::DynamicImage,
+) -> Result<(DiffuseTexture, RenderTexture, OutputBuffer)> {
+    let texture = DiffuseTexture::from_image(device, queue, img, None)?;
+    let render_texture = RenderTexture::from_image(device, img)?;
+    let output_buffer = OutputBuffer::from_image(device, img)?;
+
+    Ok((texture, render_texture, output_buffer))
+}
+
+pub struct RenderTexture {
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
+    pub extent: wgpu::Extent3d,
+}
+
+impl RenderTexture {
+    pub fn from_image(device: &wgpu::Device, img: &image::DynamicImage) -> Result<Self> {
+        let (width, height) = img.dimensions();
+
+        let extent = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: None,
+            size: extent,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        Ok(Self { texture, extent, view })
+    }
+}
+
+pub struct OutputBuffer {
+    pub buffer: wgpu::Buffer,
+    pub dimensions: BufferDimensions,
+}
+
+impl OutputBuffer {
+    pub fn from_image(device: &wgpu::Device, img: &image::DynamicImage) -> Result<Self> {
+        let (width, height) = img.dimensions();
+
+        let dimensions = BufferDimensions::new(width as usize, height as usize);
+        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Offline Buffer"),
+            size: (dimensions.padded_bytes_per_row * dimensions.height) as u64,
+            usage: 
+            // We want to be able to map this for reading on CPU side
+            wgpu::BufferUsages::MAP_READ 
+            // We also want to be able to use it as the destination of a texture copy (the offline render)
+            | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        Ok(OutputBuffer { buffer, dimensions })
+    }
+}
+
+pub struct DiffuseTexture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
 }
 
-impl Texture {
-    pub fn from_bytes(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        bytes: &[u8],
-        label: &str,
-    ) -> Result<Self> {
-        let img = image::load_from_memory(bytes)?;
-        Self::from_image(device, queue, &img, Some(label))
-    }
+impl DiffuseTexture {
+    // pub fn from_bytes(
+    //     device: &wgpu::Device,
+    //     queue: &wgpu::Queue,
+    //     bytes: &[u8],
+    //     label: &str,
+    // ) -> Result<Self> {
+    //     let img = image::load_from_memory(bytes)?;
+    //     Self::from_image(device, queue, &img, Some(label))
+    // }
 
     pub fn from_image(
         device: &wgpu::Device,
@@ -28,11 +98,11 @@ impl Texture {
         label: Option<&str>,
     ) -> Result<Self> {
         let rgba = img.to_rgba8();
-        let dimensions = img.dimensions();
+        let (width, height) = img.dimensions();
 
         let size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
+            width,
+            height,
             depth_or_array_layers: 1,
         };
         let format = wgpu::TextureFormat::Rgba8UnormSrgb;
@@ -57,8 +127,8 @@ impl Texture {
             &rgba,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * dimensions.0),
-                rows_per_image: Some(dimensions.1),
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height),
             },
             size,
         );
@@ -68,7 +138,9 @@ impl Texture {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
+            // Use nearest everywhere.
+            // We don't want to affect results by doing filtering.
+            mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()

@@ -88,6 +88,7 @@ a constant color is used (black, value zero).
   * Use `assert!(..)` to let the compiler optimize away bounds checks 
     * TODO: How do we prove our code contains bounds checks?
 * Try employing [Flamegraph](https://github.com/jonhoo/inferno)s 
+* Try `wgpu::Features::TIMESTAMP_QUERY` for GPU offscreen rendering, see [here](https://github.com/gfx-rs/wgpu/blob/3563849585ad6f3ea65b6c9be294e9190555eed3/wgpu/examples/mipmap/main.rs#LL203C9-L203C40)
 
 
 ### Flexibility

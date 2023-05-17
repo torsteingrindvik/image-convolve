@@ -15,22 +15,33 @@ fn fullscreen_vertex_shader(@builtin(vertex_index) vertex_index: u32) -> Fullscr
     return FullscreenVertexOutput(clip_position, uv);
 }
 
+// @group(0) @binding(0)
+// var<uniform> pixel_size: vec2<f32>;
 @group(0) @binding(0)
-var<uniform> pixel_size: vec2<f32>;
-@group(0) @binding(1)
-var t_diffuse: texture_2d<f32>;
-@group(0)@binding(2)
-var s_diffuse: sampler;
+var t: texture_2d<f32>;
+@group(0)@binding(1)
+var s: sampler;
 
 
 
 @fragment
 fn frag_shader(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
-	var uv = in.uv;
+	var rgb = vec3<f32>(0.);
 
-	if (in.uv.x > 0.5) {
-		uv.y = 1. - uv.y;
-	}
+	// rgb += 0. * textureSample(t, s, in.uv, vec2<i32>(-1, -1)).rgb;
+	rgb += -1. * textureSample(t, s, in.uv, vec2<i32>(0, -1)).rgb;
+	// rgb += 0. * textureSample(t, s, in.uv, vec2<i32>(1, -1)).rgb;
 
-	return textureSample(t_diffuse, s_diffuse, uv);
+	rgb += -1. * textureSample(t, s, in.uv, vec2<i32>(-1, 0)).rgb;
+	rgb += 4. * textureSample(t, s, in.uv, vec2<i32>(0, 0)).rgb;
+	rgb += -1. * textureSample(t, s, in.uv, vec2<i32>(1, 0)).rgb;
+
+	// rgb += 0. * textureSample(t, s, in.uv, vec2<i32>(-1, 1)).rgb;
+	rgb += -1. * textureSample(t, s, in.uv, vec2<i32>(0, 1)).rgb;
+	// rgb += 0. * textureSample(t, s, in.uv, vec2<i32>(1, 1)).rgb;
+
+	// normalization
+	// rgb *= 1.;
+
+	return vec4(rgb, 1.);
 }

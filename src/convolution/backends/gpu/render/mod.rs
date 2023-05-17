@@ -28,7 +28,8 @@ pub async fn run(png_output_path: &str, width: usize, height: usize) -> Result<(
 
 /// Run the wgpu texture thing
 pub async fn run2() -> Result<()> {
-    boilerplate::run().await
+    boilerplate::do_it().await
+    // boilerplate::run().await
 }
 
 async fn prepare_wgpu() -> Result<(Adapter, Device, Queue)> {
@@ -187,8 +188,13 @@ async fn create_png(
     Ok(())
 }
 
+/// From `wgpu`:
+/// It is a WebGPU requirement that ImageCopyBuffer.layout.bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT == 0
+/// So we calculate padded_bytes_per_row by rounding unpadded_bytes_per_row
+/// up to the next multiple of wgpu::COPY_BYTES_PER_ROW_ALIGNMENT.
+/// https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
 #[derive(Debug)]
-struct BufferDimensions {
+pub struct BufferDimensions {
     width: usize,
     height: usize,
     unpadded_bytes_per_row: usize,
@@ -197,11 +203,6 @@ struct BufferDimensions {
 
 impl BufferDimensions {
     fn new(width: usize, height: usize) -> Self {
-        // It is a WebGPU requirement that ImageCopyBuffer.layout.bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT == 0
-        // So we calculate padded_bytes_per_row by rounding unpadded_bytes_per_row
-        // up to the next multiple of wgpu::COPY_BYTES_PER_ROW_ALIGNMENT.
-        // https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
-
         // RGBA spread out like [u8, u8, u8, u8], same size as a u32.
         let bytes_per_pixel = size_of::<u32>();
         let unpadded_bytes_per_row = width * bytes_per_pixel;

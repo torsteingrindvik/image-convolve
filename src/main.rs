@@ -17,22 +17,22 @@ async fn main() -> Result<()> {
     image_convolve::convolution::backends::gpu::render::run2().await?;
 
     // For brevity
-    let (i, o, k) = (&args.input, &args.output, args.kernel);
+    // let (i, o, k) = (&args.input, &args.output, args.kernel);
 
-    match args.backend {
-        Backend::SingleNestedLoops => {
-            convolve::<cpu::single::NestedLoops, _>(i, o, k)?;
-        }
-        Backend::SingleNestedIterators => {
-            convolve::<cpu::single::NestedIterators, _>(i, o, k)?;
-        }
-        Backend::MultiRayon => {
-            convolve::<cpu::multi::NestedIterators, _>(i, o, k)?;
-        }
-    }
+    // match args.backend {
+    //     Backend::SingleNestedLoops => {
+    //         convolve::<cpu::single::NestedLoops, _>(i, o, k)?;
+    //     }
+    //     Backend::SingleNestedIterators => {
+    //         convolve::<cpu::single::NestedIterators, _>(i, o, k)?;
+    //     }
+    //     Backend::MultiRayon => {
+    //         convolve::<cpu::multi::NestedIterators, _>(i, o, k)?;
+    //     }
+    // }
 
     // tmp
-    image_convolve::convolution::backends::gpu::render::run("test.png", 100, 100).await?;
+    // image_convolve::convolution::backends::gpu::render::run("test.png", 100, 100).await?;
 
     Ok(())
 }
