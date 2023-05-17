@@ -85,7 +85,10 @@ a constant color is used (black, value zero).
 ### Performance
 
 * Checkout the [Rust Performance Book](https://nnethercote.github.io/perf-book/) for tips
+  * Use `assert!(..)` to let the compiler optimize away bounds checks 
+    * TODO: How do we prove our code contains bounds checks?
 * Try employing [Flamegraph](https://github.com/jonhoo/inferno)s 
+
 
 ### Flexibility
 

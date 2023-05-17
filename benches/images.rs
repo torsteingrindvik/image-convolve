@@ -2,7 +2,10 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use image_convolve::{
-    convolution::{backends::cpu_naive::CpuNaive, strategy::prepare},
+    convolution::{
+        backends::{cpu_multi, cpu_single},
+        strategy::prepare,
+    },
     prelude::*,
 };
 
@@ -22,12 +25,42 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
     .iter()
     {
         group.bench_with_input(
-            BenchmarkId::new("CPU Naive", kernel),
+            BenchmarkId::new("CPU Single Loops", kernel),
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
                     || (input.clone(), output.clone()),
-                    |(input, mut output)| CpuNaive::convolve(input, &mut output, *kernel),
+                    |(input, mut output)| {
+                        cpu_single::NestedLoops::convolve(input, &mut output, *kernel)
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("CPU Single Iterators", kernel),
+            kernel,
+            |bencher, kernel| {
+                bencher.iter_batched(
+                    || (input.clone(), output.clone()),
+                    |(input, mut output)| {
+                        cpu_single::NestedIterators::convolve(input, &mut output, *kernel)
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("CPU Multi Rayon", kernel),
+            kernel,
+            |bencher, kernel| {
+                bencher.iter_batched(
+                    || (input.clone(), output.clone()),
+                    |(input, mut output)| {
+                        cpu_multi::NestedIterators::convolve(input, &mut output, *kernel)
+                    },
                     criterion::BatchSize::SmallInput,
                 );
             },

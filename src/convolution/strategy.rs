@@ -8,9 +8,9 @@ use tracing::info;
 
 use crate::prelude::*;
 
-/// The type of  imagxelewe will working with.
+/// The type of image pixel we will be working with.
 pub type ImagePixel = image::Rgb<f32>;
-/// The type of image we will working with.
+/// The type of image we will be working with.
 pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
 
 /// The common strategy convolution "backends" should implement.
@@ -42,7 +42,7 @@ pub fn prepare<P: AsRef<Path>>(input: P) -> Result<(Image, Image)> {
 }
 
 /// Convolve the input file by using the given backend.
-pub fn convolve<P: AsRef<Path>, Backend: ConvolveStrategy>(
+pub fn convolve<Backend: ConvolveStrategy, P: AsRef<Path>>(
     input: P,
     output: P,
     kernel: Kernel,

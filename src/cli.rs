@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::convolution::Backend;
 use crate::prelude::*;
 use clap::Parser;
 
@@ -18,4 +19,8 @@ pub struct Args {
     /// Kernel to apply to image
     #[arg(value_enum, short, long)]
     pub kernel: Kernel,
+
+    /// Backend to use for convolution
+    #[arg(value_enum, short, long)]
+    pub backend: Backend,
 }

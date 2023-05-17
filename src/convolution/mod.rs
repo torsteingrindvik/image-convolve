@@ -1,10 +1,28 @@
+use clap::ValueEnum;
+
+/// The various backends available, enumerated.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Backend {
+    /// See [`backends::cpu_single`].
+    SingleNestedLoops,
+
+    /// See [`backends::cpu_single`].
+    SingleNestedIterators,
+
+    /// See [`backends::cpu_multi`].
+    MultiRayon,
+}
+
 /// Implementors of the [`Strategy`]
 pub mod backends {
-    /// Convolution using a naive byte-for-byte approach on the CPU.
-    pub mod cpu_naive;
+    /// Single threaded CPU convolution.
+    pub mod cpu_single;
 
-    /// Convolution using rayon for using all cores available.
-    pub mod cpu_rayon;
+    /// Multi threaded CPU convolution.
+    pub mod cpu_multi;
+
+    /// Common CPU operations.
+    pub(crate) mod cpu_util;
 }
 
 /// Holds the common trait for backends,
