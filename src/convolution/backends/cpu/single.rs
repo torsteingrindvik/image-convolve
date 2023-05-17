@@ -1,7 +1,7 @@
 use crate::convolution::util::view3x3;
 use crate::prelude::*;
 
-use super::cpu_util::do_convolve;
+use super::util::do_convolve;
 
 /// A straight forward CPU convolution strategy.
 /// Iterates over pixels in a nested loop.

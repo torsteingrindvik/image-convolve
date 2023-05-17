@@ -8,12 +8,16 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Error)]
 pub enum Error {
     /// Usage error.
-    #[error("Usage problem: {0}")]
+    #[error("Usage error: {0}")]
     Usage(String),
 
     /// Limitation error- the library cannot (yet) support this.
     #[error("Limitation: {0}")]
     Limitation(String),
+
+    /// GPU related error.
+    #[error("GPU error: {0}")]
+    Gpu(String),
 
     /// IO transparent error.
     #[error("IO error: {0}")]

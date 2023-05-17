@@ -15,14 +15,23 @@ pub enum Backend {
 
 /// Implementors of the [`Strategy`]
 pub mod backends {
-    /// Single threaded CPU convolution.
-    pub mod cpu_single;
+    /// CPU based convolution.
+    pub mod cpu {
+        /// Single threaded.
+        pub mod single;
 
-    /// Multi threaded CPU convolution.
-    pub mod cpu_multi;
+        /// Multi threaded.
+        pub mod multi;
 
-    /// Common CPU operations.
-    pub(crate) mod cpu_util;
+        /// Common CPU operations.
+        pub(crate) mod util;
+    }
+
+    /// GPU based convolution.
+    pub mod gpu {
+        /// Convolution via a normal GPU pipeline.
+        pub mod render;
+    }
 }
 
 /// Holds the common trait for backends,

@@ -3,7 +3,7 @@ use rayon::prelude::*;
 use crate::convolution::util::view3x3;
 use crate::prelude::*;
 
-use super::cpu_util::do_convolve;
+use super::util::do_convolve;
 
 /// Uses nested iterators, but runs in parallel at the row level.
 pub struct NestedIterators;

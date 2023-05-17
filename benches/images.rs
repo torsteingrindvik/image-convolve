@@ -2,10 +2,7 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use image_convolve::{
-    convolution::{
-        backends::{cpu_multi, cpu_single},
-        strategy::prepare,
-    },
+    convolution::{backends::cpu, strategy::prepare},
     prelude::*,
 };
 
@@ -31,7 +28,7 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
                 bencher.iter_batched(
                     || (input.clone(), output.clone()),
                     |(input, mut output)| {
-                        cpu_single::NestedLoops::convolve(input, &mut output, *kernel)
+                        cpu::single::NestedLoops::convolve(input, &mut output, *kernel)
                     },
                     criterion::BatchSize::SmallInput,
                 );
@@ -45,7 +42,7 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
                 bencher.iter_batched(
                     || (input.clone(), output.clone()),
                     |(input, mut output)| {
-                        cpu_single::NestedIterators::convolve(input, &mut output, *kernel)
+                        cpu::single::NestedIterators::convolve(input, &mut output, *kernel)
                     },
                     criterion::BatchSize::SmallInput,
                 );
@@ -59,7 +56,7 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
                 bencher.iter_batched(
                     || (input.clone(), output.clone()),
                     |(input, mut output)| {
-                        cpu_multi::NestedIterators::convolve(input, &mut output, *kernel)
+                        cpu::multi::NestedIterators::convolve(input, &mut output, *kernel)
                     },
                     criterion::BatchSize::SmallInput,
                 );
