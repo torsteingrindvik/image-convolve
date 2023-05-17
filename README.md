@@ -93,3 +93,13 @@ a constant color is used (black, value zero).
 ### Flexibility
 
 * Allow changing the behaviour of edge handling
+
+## Attributions
+
+This project borrows from several sources:
+
+* For texture-buffer copies, see this (WGPU sample)[https://github.com/gfx-rs/wgpu/blob/trunk/wgpu/examples/capture/main.rs]
+* For the WGPU setup and texture loading, see (Learn WGPU part 5)[https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/]
+* For a fullscreen vertex shader, see (this Bevy shader)[https://github.com/bevyengine/bevy/blob/main/crates/bevy_core_pipeline/src/fullscreen_vertex_shader/fullscreen.wgsl]
+
+See the separate `README.md` in the `images` folder for where the images come from.
