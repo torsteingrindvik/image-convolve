@@ -3,14 +3,18 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use image_convolve::{
     convolution::{
-        backends::{cpu_multi, cpu_single},
+        backends::{
+            cpu,
+            gpu::{self, offscreen::context::GpuCtx},
+        },
         strategy::prepare,
     },
     prelude::*,
 };
 
 fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
-    let (input, output) = prepare(input).unwrap();
+    let input = prepare(input).unwrap();
+    let gpu_ctx = GpuCtx::new(input.clone()).unwrap();
 
     let mut group = c.benchmark_group(name);
 
@@ -29,10 +33,8 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu_single::NestedLoops::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::single::NestedLoops::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },
@@ -43,10 +45,8 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu_single::NestedIterators::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::single::NestedIterators::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },
@@ -57,10 +57,20 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu_multi::NestedIterators::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::multi::NestedIterators::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
+
+        group.bench_with_input(
+            BenchmarkId::new("GPU Offscreen", kernel),
+            kernel,
+            |bencher, kernel| {
+                bencher.iter_batched(
+                    || gpu::offscreen::Offscreen::new(gpu_ctx.clone(), *kernel).unwrap(),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },

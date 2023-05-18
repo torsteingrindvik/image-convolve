@@ -1,8 +1,11 @@
 use clap::Parser;
 use image_convolve::{
     convolution::{
-        backends::{cpu_multi, cpu_single},
-        strategy::convolve,
+        backends::{
+            cpu,
+            gpu::{self, offscreen::context::GpuCtx},
+        },
+        strategy::{convolve, prepare},
         Backend,
     },
     prelude::*,
@@ -17,17 +20,27 @@ fn main() -> Result<()> {
     info!(?args, "CLI");
 
     // For brevity
-    let (i, o, k) = (&args.input, &args.output, args.kernel);
+    let (input, output, kernel) = (&args.input, &args.output, args.kernel);
+
+    let image = prepare(input)?;
 
     match args.backend {
         Backend::SingleNestedLoops => {
-            convolve::<cpu_single::NestedLoops, _>(i, o, k)?;
+            let backend = cpu::single::NestedLoops::from((image, kernel));
+            convolve(backend, output)?;
         }
         Backend::SingleNestedIterators => {
-            convolve::<cpu_single::NestedIterators, _>(i, o, k)?;
+            let backend = cpu::single::NestedIterators::from((image, kernel));
+            convolve(backend, output)?;
         }
         Backend::MultiRayon => {
-            convolve::<cpu_multi::NestedIterators, _>(i, o, k)?;
+            let backend = cpu::multi::NestedIterators::from((image, kernel));
+            convolve(backend, output)?;
+        }
+        Backend::GpuOffscreen => {
+            let ctx = GpuCtx::new(image)?;
+            let backend = gpu::offscreen::Offscreen::new(ctx, kernel)?;
+            convolve(backend, output)?;
         }
     }
 

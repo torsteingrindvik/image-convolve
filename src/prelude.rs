@@ -1,6 +1,6 @@
 pub use crate::{
     cli::Args,
-    convolution::strategy::{ConvolveStrategy, Image},
+    convolution::strategy::ConvolveStrategy,
     error::{Error, Result},
     kernel::Kernel,
 };

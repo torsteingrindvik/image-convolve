@@ -88,8 +88,21 @@ a constant color is used (black, value zero).
   * Use `assert!(..)` to let the compiler optimize away bounds checks 
     * TODO: How do we prove our code contains bounds checks?
 * Try employing [Flamegraph](https://github.com/jonhoo/inferno)s 
+* Try `wgpu::Features::TIMESTAMP_QUERY` for GPU offscreen rendering, see [here](https://github.com/gfx-rs/wgpu/blob/3563849585ad6f3ea65b6c9be294e9190555eed3/wgpu/examples/mipmap/main.rs#LL203C9-L203C40)
 
 
 ### Flexibility
 
 * Allow changing the behaviour of edge handling
+  * As of now, CPU backends always skip one row/column on each edge
+  * GPU backends use a clamp to edge sampler
+
+## Attributions
+
+This project borrows from several sources:
+
+* For texture-buffer copies, see this (WGPU sample)[https://github.com/gfx-rs/wgpu/blob/trunk/wgpu/examples/capture/main.rs]
+* For the WGPU setup and texture loading, see (Learn WGPU part 5)[https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/]
+* For a fullscreen vertex shader, see (this Bevy shader)[https://github.com/bevyengine/bevy/blob/main/crates/bevy_core_pipeline/src/fullscreen_vertex_shader/fullscreen.wgsl]
+
+See the separate `README.md` in the `images` folder for where the images come from.
