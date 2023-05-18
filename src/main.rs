@@ -1,12 +1,16 @@
 use clap::Parser;
 use image_convolve::{
-    convolution::{backends::cpu, strategy::convolve, Backend},
+    convolution::{
+        backends::{cpu, gpu},
+        strategy::convolve,
+        Backend,
+    },
     prelude::*,
 };
 use tracing::info;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+// #[tokio::main]
+fn main() -> Result<()> {
     let args = Args::parse();
 
     tracing_subscriber::fmt().init();
@@ -15,7 +19,6 @@ async fn main() -> Result<()> {
 
     // For brevity
     let (i, o, k) = (&args.input, &args.output, args.kernel);
-    // image_convolve::convolution::backends::gpu::render::run2().await?;
 
     match args.backend {
         Backend::SingleNestedLoops => {
@@ -27,10 +30,10 @@ async fn main() -> Result<()> {
         Backend::MultiRayon => {
             convolve::<cpu::multi::NestedIterators, _>(i, o, k)?;
         }
+        Backend::GpuOffscreen => {
+            convolve::<gpu::offscreen::Offscreen, _>(i, o, k)?;
+        }
     }
-
-    // tmp
-    // image_convolve::convolution::backends::gpu::render::run("test.png", 100, 100).await?;
 
     Ok(())
 }

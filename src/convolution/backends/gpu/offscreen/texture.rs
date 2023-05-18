@@ -18,6 +18,7 @@ pub fn prepare(
     Ok((texture, render_texture, output_buffer))
 }
 
+#[derive(Debug)]
 pub struct RenderTexture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -51,6 +52,7 @@ impl RenderTexture {
     }
 }
 
+#[derive(Debug)]
 pub struct OutputBuffer {
     pub buffer: wgpu::Buffer,
     pub dimensions: BufferDimensions,
@@ -91,8 +93,7 @@ impl DiffuseTexture {
     ) -> Result<Self> {
         let (width, height) = img.dimensions();
 
-        // TODO: This is probably expensive?
-        let rgba = DynamicImage::ImageRgb32F(img).into_rgba8();
+        let rgba = img.to_rgba8();
 
         let size = wgpu::Extent3d {
             width,

@@ -3,14 +3,17 @@ use clap::ValueEnum;
 /// The various backends available, enumerated.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Backend {
-    /// See [`backends::cpu_single`].
+    /// See [`backends::cpu::single`].
     SingleNestedLoops,
 
-    /// See [`backends::cpu_single`].
+    /// See [`backends::cpu::single`].
     SingleNestedIterators,
 
-    /// See [`backends::cpu_multi`].
+    /// See [`backends::cpu::multi`].
     MultiRayon,
+
+    /// See [`backends::gpu::offscreen`].
+    GpuOffscreen,
 }
 
 /// Implementors of the [`Strategy`]
@@ -30,7 +33,7 @@ pub mod backends {
     /// GPU based convolution.
     pub mod gpu {
         // Convolution via a offscreen GPU pipeline.
-        // pub mod offscreen;
+        pub mod offscreen;
     }
 }
 

@@ -7,6 +7,8 @@ pub type ImagePixel = image::Rgb<f32>;
 /// The type of image we will be working with.
 pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
 
+// TODO: Common
+#[derive(Debug)]
 pub(crate) struct ImageBuffers {
     pub input: Image,
     pub output: Image,
