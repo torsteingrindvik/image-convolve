@@ -31,7 +31,25 @@ impl Display for Kernel {
     }
 }
 
-// TODO: More of a CPU util?
+/// A kernel with its associated weights an normalization factor.
+#[derive(Debug, Copy, Clone)]
+pub struct KernelImpl {
+    /// Weights from top-left to bottom-right.
+    pub weights: [f32; 9],
+
+    /// Normalization.
+    pub normalization: f32,
+}
+
+impl From<Kernel> for KernelImpl {
+    fn from(kernel: Kernel) -> Self {
+        Self {
+            weights: *kernel.matrix(),
+            normalization: kernel.normalization(),
+        }
+    }
+}
+
 impl Kernel {
     /// The matrix with weights for the given kernel.
     pub const fn matrix(&self) -> &'static [f32; 9] {

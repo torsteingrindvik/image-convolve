@@ -1,6 +1,6 @@
 use image::{DynamicImage, GenericImageView, Pixel, SubImage};
 
-use crate::prelude::*;
+use crate::kernel::KernelImpl;
 
 /// The type of image pixel we will be working with on the CPU.
 pub type ImagePixel = image::Rgb<f32>;
@@ -35,22 +35,28 @@ impl ImageBuffers {
 /// iterated over using 0..3 indexing in both coordinates,
 /// and should result in reading the 3x3 neighbourhood
 /// centered around the output pixel we're interested in.
+#[inline(always)]
 pub fn do_convolve(
-    kernel: Kernel,
+    kernel: KernelImpl,
     pixel: &mut ImagePixel,
     view_3x3: &dyn GenericImageView<Pixel = ImagePixel>,
 ) {
     for row in 0..3 {
         for col in 0..3 {
-            pixel.apply2(
-                &view_3x3.get_pixel(col, row),
-                |output_channel, input_channel| {
-                    output_channel + input_channel * kernel.weight(row as usize, col as usize)
-                },
-            );
+            unsafe {
+                pixel.apply2(
+                    // &view_3x3.get_pixel(col, row),
+                    &view_3x3.unsafe_get_pixel(col, row),
+                    |output_channel, input_channel| {
+                        // output_channel + input_channel * kernel.weight(row as usize, col as usize)
+                        output_channel
+                            + input_channel * kernel.weights[col as usize + row as usize * 3]
+                    },
+                );
+            }
         }
     }
-    pixel.apply(|channel| channel * kernel.normalization())
+    pixel.apply(|channel| channel * kernel.normalization)
 }
 
 pub type Kernel3x3<'i> = SubImage<&'i Image>;
@@ -60,6 +66,7 @@ pub type Kernel3x3<'i> = SubImage<&'i Image>;
 /// # Panics
 ///
 /// If there isn't space to create the pixel area.
+#[inline(always)]
 pub fn view3x3(image: &Image, row: u32, column: u32) -> Kernel3x3 {
     debug_assert!(row != 0);
     debug_assert!(row < image.height() - 1);

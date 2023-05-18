@@ -1,6 +1,7 @@
 use image::DynamicImage;
 use rayon::prelude::*;
 
+use crate::kernel::KernelImpl;
 use crate::prelude::*;
 
 use super::util::{do_convolve, view3x3, ImageBuffers};
@@ -8,14 +9,14 @@ use super::util::{do_convolve, view3x3, ImageBuffers};
 /// Uses nested iterators, but runs in parallel at the row level.
 pub struct NestedIterators {
     buffers: ImageBuffers,
-    kernel: Kernel,
+    kernel: KernelImpl,
 }
 
 impl From<(DynamicImage, Kernel)> for NestedIterators {
     fn from((input, kernel): (DynamicImage, Kernel)) -> Self {
         Self {
             buffers: ImageBuffers::new(input),
-            kernel,
+            kernel: kernel.into(),
         }
     }
 }

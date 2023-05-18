@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use image::{DynamicImage, GenericImageView};
 
+use crate::kernel::KernelImpl;
 use crate::prelude::*;
 
 use super::util::{do_convolve, view3x3, ImageBuffers};
@@ -10,7 +11,7 @@ use super::util::{do_convolve, view3x3, ImageBuffers};
 /// Iterates over pixels in a nested loop.
 pub struct NestedLoops {
     buffers: ImageBuffers,
-    kernel: Kernel,
+    kernel: KernelImpl,
     ranges: ConvolutionRanges,
 }
 
@@ -20,7 +21,7 @@ impl From<(DynamicImage, Kernel)> for NestedLoops {
 
         Self {
             buffers: ImageBuffers::new(input),
-            kernel,
+            kernel: kernel.into(),
             ranges: ConvolutionRanges::new(width, height),
         }
     }
@@ -50,14 +51,14 @@ impl ConvolveStrategy for NestedLoops {
 /// each pixel.
 pub struct NestedIterators {
     buffers: ImageBuffers,
-    kernel: Kernel,
+    kernel: KernelImpl,
 }
 
 impl From<(DynamicImage, Kernel)> for NestedIterators {
     fn from((input, kernel): (DynamicImage, Kernel)) -> Self {
         Self {
             buffers: ImageBuffers::new(input),
-            kernel,
+            kernel: kernel.into(),
         }
     }
 }
