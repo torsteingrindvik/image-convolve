@@ -94,6 +94,8 @@ a constant color is used (black, value zero).
 ### Flexibility
 
 * Allow changing the behaviour of edge handling
+  * As of now, CPU backends always skip one row/column on each edge
+  * GPU backends use a clamp to edge sampler
 
 ## Attributions
 

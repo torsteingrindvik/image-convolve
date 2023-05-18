@@ -7,7 +7,6 @@ pub type ImagePixel = image::Rgb<f32>;
 /// The type of image we will be working with.
 pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
 
-// TODO: Common
 #[derive(Debug)]
 pub(crate) struct ImageBuffers {
     pub input: Image,
@@ -37,6 +36,8 @@ impl ImageBuffers {
 /// iterated over using 0..3 indexing in both coordinates,
 /// and should result in reading the 3x3 neighbourhood
 /// centered around the output pixel we're interested in.
+///
+/// Safety: The view must be safe to access with the indices described above.
 #[inline(always)]
 pub fn do_convolve(
     kernel: KernelImpl,
@@ -47,10 +48,8 @@ pub fn do_convolve(
         for col in 0..3 {
             unsafe {
                 pixel.apply2(
-                    // &view_3x3.get_pixel(col, row),
                     &view_3x3.unsafe_get_pixel(col, row),
                     |output_channel, input_channel| {
-                        // output_channel + input_channel * kernel.weight(row as usize, col as usize)
                         output_channel
                             + input_channel * kernel.weights[col as usize + row as usize * 3]
                     },

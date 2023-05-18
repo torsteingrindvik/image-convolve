@@ -13,23 +13,27 @@ use super::{texture, FORMAT};
 /// when benchmarks must run hundreds or thousands of times.
 #[derive(Debug)]
 pub struct GpuData {
-    /// TODO
+    /// Device.
     pub device: wgpu::Device,
-    /// TODO
+    /// Queue.
     pub queue: wgpu::Queue,
-    /// TODO
-    // pub render_pipeline: wgpu::RenderPipeline,
-    /// TODO
+
+    /// The bind group holding the diffuse
+    /// texture and its sampler.
     pub diffuse_bind_group: wgpu::BindGroup,
-    /// TODO
+
+    /// The texture we'll render to instead of e.g.
+    /// a window surface.
     pub render_texture: texture::RenderTexture,
-    /// TODO
+
+    /// The buffer we'll use to copy the render texture into,
+    /// such that we can map it.
     pub output_gpu_buffer: texture::OutputBuffer,
 
-    /// TODO
+    /// The shader containing the vertex- and fragment programs.
     pub shader: wgpu::ShaderModule,
 
-    /// TODO
+    /// The layout of the render pipeline.
     pub render_pipeline_layout: wgpu::PipelineLayout,
 }
 
@@ -64,14 +68,18 @@ async fn prepare_wgpu() -> Result<(Adapter, Device, Queue)> {
 }
 
 impl GpuCtx {
-    /// TODO
+    /// Create a GPU context based on some image.
+    /// The size of this image determines the size of GPU related
+    /// textures and buffers.
     pub fn new(diffuse: DynamicImage) -> Result<Self> {
         Runtime::new()
             .unwrap()
             .block_on(async { Self::async_new(diffuse).await })
     }
 
-    /// TODO
+    /// Create a render pipeline based on the given kernel.
+    /// The kernel specialized which fragment shader program runs, possibly
+    /// allowing for optimizations.
     pub fn render_pipeline(&self, kernel: Kernel) -> RenderPipeline {
         let fs_entry = frag_entry_point(kernel);
 
@@ -101,6 +109,7 @@ impl GpuCtx {
             })
     }
 
+    /// Create a new GPU context and all needed resources.
     async fn async_new(diffuse: DynamicImage) -> Result<Self> {
         let (_adapter, device, queue) = prepare_wgpu().await?;
 

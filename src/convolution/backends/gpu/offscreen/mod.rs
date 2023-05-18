@@ -1,7 +1,7 @@
 use self::context::GpuCtx;
 use crate::prelude::*;
 use image::{Pixel, Rgba, RgbaImage};
-use std::{iter, mem::size_of};
+use std::iter;
 use tokio::sync::oneshot;
 use wgpu::RenderPipeline;
 
@@ -22,7 +22,11 @@ pub struct Offscreen {
 
 impl ConvolveStrategy for Offscreen {
     fn convolve(&mut self) -> Result<()> {
-        let idx = self.render().unwrap();
+        // Execute the pipeline on the GPU.
+        let idx = self.render();
+
+        // The rest is mapping the GPU buffer to CPU side and then
+        // creating an image from it.
 
         let buffer_slice = self.ctx.inner.output_gpu_buffer.buffer.slice(..);
         let (tx, rx) = oneshot::channel();
@@ -64,40 +68,6 @@ impl ConvolveStrategy for Offscreen {
     }
 }
 
-/// With help from (wgpu examples)[https://github.com/gfx-rs/wgpu/blob/trunk/wgpu/examples/capture/main.rs].
-/// It is a WebGPU requirement that ImageCopyBuffer.layout.bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT == 0
-/// So we calculate padded_bytes_per_row by rounding unpadded_bytes_per_row
-/// up to the next multiple of wgpu::COPY_BYTES_PER_ROW_ALIGNMENT.
-/// https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
-#[derive(Debug)]
-pub struct BufferDimensions {
-    width: usize,
-    height: usize,
-    unpadded_bytes_per_row: usize,
-    padded_bytes_per_row: usize,
-}
-
-impl BufferDimensions {
-    fn new(width: usize, height: usize) -> Self {
-        // RGBA spread out like [u8, u8, u8, u8], same size as a u32.
-        let bytes_per_pixel = size_of::<u32>();
-        let unpadded_bytes_per_row = width * bytes_per_pixel;
-
-        // Right now, this number is 256 bytes.
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize;
-
-        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
-        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
-
-        Self {
-            width,
-            height,
-            unpadded_bytes_per_row,
-            padded_bytes_per_row,
-        }
-    }
-}
-
 impl Offscreen {
     /// Create a new [`Offscreen`] instance with the given [`GpuCtx`] and [`Kernel`].
     pub fn new(context: GpuCtx, kernel: Kernel) -> Result<Self> {
@@ -113,7 +83,7 @@ impl Offscreen {
         })
     }
 
-    fn render(&mut self) -> std::result::Result<wgpu::SubmissionIndex, wgpu::SurfaceError> {
+    fn render(&mut self) -> wgpu::SubmissionIndex {
         let mut encoder =
             self.ctx
                 .inner
@@ -163,8 +133,6 @@ impl Offscreen {
             self.ctx.inner.render_texture.extent,
         );
 
-        let submission_index = self.ctx.inner.queue.submit(iter::once(encoder.finish()));
-
-        Ok(submission_index)
+        self.ctx.inner.queue.submit(iter::once(encoder.finish()))
     }
 }

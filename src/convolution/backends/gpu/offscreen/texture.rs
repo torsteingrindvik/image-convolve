@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use image::{DynamicImage, GenericImageView};
-use super::{BufferDimensions, FORMAT};
+use super::{FORMAT};
 
-pub fn prepare(
+pub(crate) fn prepare(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     img: DynamicImage,
@@ -80,6 +80,7 @@ pub struct DiffuseTexture {
 }
 
 impl DiffuseTexture {
+    /// Given a [`DynamicImage`], prepare a 
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -95,14 +96,13 @@ impl DiffuseTexture {
             height,
             depth_or_array_layers: 1,
         };
-        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label,
             size,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format,
+            format: FORMAT,
             // Need to be able to use this in a shader (by binding), as well as using `write_texture` on it to load data.
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
@@ -118,6 +118,8 @@ impl DiffuseTexture {
             &rgba,
             wgpu::ImageDataLayout {
                 offset: 0,
+
+                // Due to the Rgba8 format each pixel is 4 bytes wide.
                 bytes_per_row: Some(4 * width),
                 rows_per_image: Some(height),
             },
@@ -141,5 +143,39 @@ impl DiffuseTexture {
             view,
             sampler,
         })
+    }
+}
+
+/// With help from (wgpu examples)[https://github.com/gfx-rs/wgpu/blob/trunk/wgpu/examples/capture/main.rs].
+/// It is a WebGPU requirement that ImageCopyBuffer.layout.bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT == 0
+/// So we calculate padded_bytes_per_row by rounding unpadded_bytes_per_row
+/// up to the next multiple of wgpu::COPY_BYTES_PER_ROW_ALIGNMENT.
+/// https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding
+#[derive(Debug)]
+pub struct BufferDimensions {
+    pub width: usize,
+    pub height: usize,
+    pub unpadded_bytes_per_row: usize,
+    pub padded_bytes_per_row: usize,
+}
+
+impl BufferDimensions {
+    fn new(width: usize, height: usize) -> Self {
+        // RGBA spread out like [u8, u8, u8, u8], same size as a u32.
+        let bytes_per_pixel = std::mem::size_of::<u32>();
+        let unpadded_bytes_per_row = width * bytes_per_pixel;
+
+        // Right now, this number is 256 bytes.
+        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize;
+
+        let padded_bytes_per_row_padding = (align - unpadded_bytes_per_row % align) % align;
+        let padded_bytes_per_row = unpadded_bytes_per_row + padded_bytes_per_row_padding;
+
+        Self {
+            width,
+            height,
+            unpadded_bytes_per_row,
+            padded_bytes_per_row,
+        }
     }
 }

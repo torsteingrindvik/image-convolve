@@ -15,7 +15,6 @@ use image_convolve::{
 fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
     let input = prepare(input).unwrap();
     let gpu_ctx = GpuCtx::new(input.clone()).unwrap();
-    // let backend = gpu::offscreen::Offscreen::new(ctx, kernel)?;
 
     let mut group = c.benchmark_group(name);
 
