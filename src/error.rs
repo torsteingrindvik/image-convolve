@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-/// Re-export of [`std::result::Result`] but using our own [`Error`].
+/// Re-export of [`std::result::Result`] but using our own [`enum@Error`].
 /// All fallible operations in this library should use this.
 pub type Result<T> = std::result::Result<T, Error>;
 

@@ -16,7 +16,7 @@ pub enum Backend {
     GpuOffscreen,
 }
 
-/// Implementors of the [`Strategy`]
+/// Implementors of the [`strategy::ConvolveStrategy`]
 pub mod backends {
     /// CPU based convolution.
     pub mod cpu {
