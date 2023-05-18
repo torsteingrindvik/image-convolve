@@ -7,7 +7,7 @@ use image_convolve::{
 };
 
 fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
-    let (input, output) = prepare(input).unwrap();
+    let input = prepare(input).unwrap();
 
     let mut group = c.benchmark_group(name);
 
@@ -26,10 +26,8 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu::single::NestedLoops::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::single::NestedLoops::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },
@@ -40,10 +38,8 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu::single::NestedIterators::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::single::NestedIterators::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },
@@ -54,10 +50,8 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
             kernel,
             |bencher, kernel| {
                 bencher.iter_batched(
-                    || (input.clone(), output.clone()),
-                    |(input, mut output)| {
-                        cpu::multi::NestedIterators::convolve(input, &mut output, *kernel)
-                    },
+                    || cpu::multi::NestedIterators::from((input.clone(), *kernel)),
+                    |mut backend| backend.convolve(),
                     criterion::BatchSize::SmallInput,
                 );
             },
