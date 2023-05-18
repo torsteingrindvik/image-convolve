@@ -21,9 +21,6 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
     for kernel in [
         Kernel::Identity,
         Kernel::EdgeDetection1,
-        Kernel::EdgeDetection2,
-        Kernel::Sharpen,
-        Kernel::BoxBlur,
         Kernel::GaussianBlur,
     ]
     .iter()
@@ -80,17 +77,17 @@ fn impl_bench(c: &mut Criterion, name: &str, input: &str) {
     group.finish();
 }
 
-fn small(c: &mut Criterion) {
-    impl_bench(c, "Small Image", "images/animal.png");
+fn res_1280x720(c: &mut Criterion) {
+    impl_bench(c, "1280x720", "images/1280x720.jpg");
 }
 
-fn medium(c: &mut Criterion) {
-    impl_bench(c, "Medium Image", "images/camera.jpg");
+fn res_1920x1080(c: &mut Criterion) {
+    impl_bench(c, "1920x1080", "images/1920x1080.jpg");
 }
 
-fn large(c: &mut Criterion) {
-    impl_bench(c, "Large Image", "images/gecko.jpg");
+fn res_3840x2160(c: &mut Criterion) {
+    impl_bench(c, "3840x2160", "images/3840x2160.jpg");
 }
 
-criterion_group!(benches, small, medium, large);
+criterion_group!(benches, res_1280x720, res_1920x1080, res_3840x2160);
 criterion_main!(benches);

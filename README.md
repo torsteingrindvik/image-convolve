@@ -7,15 +7,28 @@
 ```norust
 cargo install --path .
 ```
+### Usage
 
-### What's available
+```norust
+image-convolve --input images/1920x1080.jpg --output out.jpg --kernel sharpen --backend multi-rayon
+```
+
+### Benchmarks
+
+Benchmarks are performed using [criterion](https://docs.rs/criterion/latest/criterion/).
+
+```norust
+cargo bench
+```
+
+### CLI `--help` output
 
 ```norust
 image-convolve --help
 
 Image convolution program. The input image will be convolved and saved to the given output path
 
-Usage: image-convolve --input <INPUT> --output <OUTPUT> --kernel <KERNEL>
+Usage: image-convolve --input <INPUT> --output <OUTPUT> --kernel <KERNEL> --backend <BACKEND>
 
 Options:
   -i, --input <INPUT>
@@ -28,57 +41,90 @@ Options:
           Kernel to apply to image
 
           Possible values:
-          - identity:
-            The identity operation. Should leave the image as-is. TODO: A good test would be using this and hashing the in/out to see that we're unaffected
-          - edge-detection1:
-            Edge detection version 1
-          - edge-detection2:
-            Edge detection version 2
-          - sharpen:
-            Sharpening
-          - box-blur:
-            Box blur
-          - gaussian-blur:
-            Gaussian blur
+          - identity:        The identity operation
+          - edge-detection1: Edge detection version 1
+          - edge-detection2: Edge detection version 2
+          - sharpen:         Sharpening
+          - box-blur:        Box blur
+          - gaussian-blur:   Gaussian blur
+
+  -b, --backend <BACKEND>
+          Backend to use for convolution
+
+          Possible values:
+          - single-nested-loops:     See [`backends::cpu::single`]
+          - single-nested-iterators: See [`backends::cpu::single`]
+          - multi-rayon:             See [`backends::cpu::multi`]
+          - gpu-offscreen:           See [`backends::gpu::offscreen`]
 
   -h, --help
           Print help (see a summary with '-h')
 ```
 
-### Typical use
+## Benchmarking
+
+To save a baseline for comparison, do:
 
 ```norust
-image-convolve --input in.png --output out.png --kernel box-blur
+cargo bench --bench images -- --save-baseline <name>
 ```
 
-## Goal
+where `<name>` is some identifier.
 
-A command line interface which is able to: 
+To compare against this at some later point, do
 
-* Point to some image as input
-* Apply a convolution matrix to it
-* Store the result in an output image
+```norust
+cargo bench --bench images -- --baseline <name>
+```
 
-Also, we want to be able to get a sense of performance using
-different approaches.
+### What is actually benchmarked?
 
+On CPU the time it takes to read the **prepared** input buffer and apply a convolution to it and move the resulting pixels into the **prepared** output buffer.
 
-## General project setup
+On GPU the time it takes to run a render pipeline on a bound **prepared** input texture and render it to a texture, then copy that texture to a buffer, map the buffer CPU side, then copying the pixels into a **prepared** output buffer.  
 
-In most project I always include (when applicable) a set of libraries:
+## Architecture
+
+### External Libraries
 
 * `tracing` and `tracing-subscriber` for logging (tracing) and consuming logs (traces)
-* `clap` for the command line interface
+* `clap` for the CLI
 * `thiserror` for error enumeration
+* `wgpu` for GPU use
+* `rayon` for CPU parallel processing
 
-_The list is longer, but these applied to this project._
+### Overview
 
-## Considerations
+The program:
+
+* Reads some input image
+* Prepares it for convolution using some kernel
+* Performs the convolution using a _backend_
+
+The backends need only implement a common interface in order to be able to do the
+convolution.
+
+Current backends:
+
+* CPU
+  * Single threaded loop based pixel access
+  * Single threaded iterator based pixel access
+  * Multi threaded iterator based pixel access
+* GPU
+  * Offscreen render pipeline
+
+## Limitations
 
 ### Edge handling
 
 If a kernel would access a pixel outside the width / height of an image,
 a constant color is used (black, value zero).
+As of now, CPU backends always skip one row/column on each edge
+GPU backends use a clamp to edge sampler
+
+### Kernels
+
+Only 3x3 pre-defined kernels are available right now.
 
 ## Future
 
@@ -86,16 +132,17 @@ a constant color is used (black, value zero).
 
 * Checkout the [Rust Performance Book](https://nnethercote.github.io/perf-book/) for tips
   * Use `assert!(..)` to let the compiler optimize away bounds checks 
-    * TODO: How do we prove our code contains bounds checks?
+    * In general, we could read the [bounds-check-cookbook](https://github.com/Shnatsel/bounds-check-cookbook/) to try to learn about when bounds might interfere
+    * Alternatively, we could more agressively use `unsafe` and skip checks where appropriate.
 * Try employing [Flamegraph](https://github.com/jonhoo/inferno)s 
-* Try `wgpu::Features::TIMESTAMP_QUERY` for GPU offscreen rendering, see [here](https://github.com/gfx-rs/wgpu/blob/3563849585ad6f3ea65b6c9be294e9190555eed3/wgpu/examples/mipmap/main.rs#LL203C9-L203C40)
+* Try `wgpu::Features::TIMESTAMP_QUERY` for GPU more rendering timing, see [here](https://github.com/gfx-rs/wgpu/blob/3563849585ad6f3ea65b6c9be294e9190555eed3/wgpu/examples/mipmap/main.rs#LL203C9-L203C40)
+* Try using [memmap](https://docs.rs/memmap/latest/memmap/struct.Mmap.html) if we care about fast file loading
+* Try using separable kernels where possible
 
+### Backends
 
-### Flexibility
-
-* Allow changing the behaviour of edge handling
-  * As of now, CPU backends always skip one row/column on each edge
-  * GPU backends use a clamp to edge sampler
+* GPU compute
+* GPU CUDA
 
 ## Attributions
 

@@ -13,7 +13,7 @@ use image_convolve::{
 use tracing::info;
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = Cli::parse();
 
     tracing_subscriber::fmt().init();
 

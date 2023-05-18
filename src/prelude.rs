@@ -1,5 +1,5 @@
 pub use crate::{
-    cli::Args,
+    cli::Cli,
     convolution::strategy::ConvolveStrategy,
     error::{Error, Result},
     kernel::Kernel,

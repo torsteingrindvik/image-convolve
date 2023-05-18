@@ -7,14 +7,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Errors that may occur in this library.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Usage error.
-    #[error("Usage error: {0}")]
-    Usage(String),
-
-    /// Limitation error- the library cannot (yet) support this.
-    #[error("Limitation: {0}")]
-    Limitation(String),
-
     /// GPU related error.
     #[error("GPU error: {0}")]
     Gpu(String),
@@ -25,5 +17,5 @@ pub enum Error {
 
     /// Image crate transparent error.
     #[error("Image library error: {0}")]
-    ImageLibrary(#[from] image::ImageError),
+    Image(#[from] image::ImageError),
 }
