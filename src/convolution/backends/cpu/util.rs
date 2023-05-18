@@ -1,6 +1,31 @@
-use image::{GenericImageView, Pixel};
+use image::{DynamicImage, GenericImageView, Pixel, SubImage};
 
-use crate::{convolution::strategy::ImagePixel, prelude::*};
+use crate::prelude::*;
+
+/// The type of image pixel we will be working with on the CPU.
+pub type ImagePixel = image::Rgb<f32>;
+/// The type of image we will be working with.
+pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
+
+pub(crate) struct ImageBuffers {
+    pub input: Image,
+    pub output: Image,
+}
+
+impl ImageBuffers {
+    pub(crate) fn dimensions(&self) -> (usize, usize) {
+        (self.input.width() as usize, self.input.height() as usize)
+    }
+}
+
+impl ImageBuffers {
+    pub(crate) fn new(input: DynamicImage) -> Self {
+        let output = Image::new(input.width(), input.height());
+        let input = input.to_rgb32f();
+
+        Self { input, output }
+    }
+}
 
 /// Apply a convolution.
 /// The weights are fetched from the given [`Kernel`].
@@ -26,4 +51,20 @@ pub fn do_convolve(
         }
     }
     pixel.apply(|channel| channel * kernel.normalization())
+}
+
+pub type Kernel3x3<'i> = SubImage<&'i Image>;
+
+/// Creates a view into an image of a 3x3 pixel area.
+///
+/// # Panics
+///
+/// If there isn't space to create the pixel area.
+pub fn view3x3(image: &Image, row: u32, column: u32) -> Kernel3x3 {
+    debug_assert!(row != 0);
+    debug_assert!(row < image.height() - 1);
+    debug_assert!(column != 0);
+    debug_assert!(column < image.width() - 1);
+
+    image.view(column - 1, row - 1, 3, 3)
 }

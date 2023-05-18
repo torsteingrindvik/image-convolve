@@ -31,6 +31,7 @@ impl Display for Kernel {
     }
 }
 
+// TODO: More of a CPU util?
 impl Kernel {
     /// The matrix with weights for the given kernel.
     pub const fn matrix(&self) -> &'static [f32; 9] {

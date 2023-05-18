@@ -8,21 +8,24 @@ use tracing::info;
 
 use crate::prelude::*;
 
-/// The type of image pixel we will be working with.
-pub type ImagePixel = image::Rgb<f32>;
-/// The type of image we will be working with.
-pub type Image = image::ImageBuffer<ImagePixel, Vec<f32>>;
-
 /// The common strategy convolution "backends" should implement.
-pub trait ConvolveStrategy {
-    /// Given an input image and an equally sized output image,
-    /// perform convolution with the given [`Kernel`].
-    fn convolve(input: Image, output: &mut Image, kernel: Kernel) -> Result<()>;
+/// Backends will be driven by calling prepare, convolve, and finish in that order.
+pub trait ConvolveStrategy: From<(DynamicImage, Kernel)> {
+    /// Prepare the input image for convolution with the given
+    /// kernel.
+    // fn prepare(&mut self, input: DynamicImage, kernel: Kernel) -> Result<()>;
+
+    /// Apply the convolution on the input image, storing the results
+    /// in an appropriate internal buffer.
+    fn convolve(&mut self) -> Result<()>;
+
+    /// Finish up by consuming any necessary buffers and producing the final image.
+    fn finish(self) -> Result<DynamicImage>;
 }
 
 /// Prepares for convolution by creating an image buffer from the
 /// input path and allocating an equally sized output image buffer for writing to.
-pub fn prepare<P: AsRef<Path>>(input: P) -> Result<(Image, Image)> {
+pub fn prepare<P: AsRef<Path>>(input: P) -> Result<DynamicImage> {
     // Check that we're able to find the extensions and that they're equal
     info!("Reading extensions");
     let ext = extension(input.as_ref())?;
@@ -33,12 +36,12 @@ pub fn prepare<P: AsRef<Path>>(input: P) -> Result<(Image, Image)> {
     let reader = BufReader::new(File::open(input)?);
 
     info!("Decoding input file");
-    let image_input: Image = get_dynamic_image(reader, &ext)?.into_rgb32f();
+    let image_input = get_dynamic_image(reader, &ext)?;
 
-    info!("Preparing output image buffer");
-    let image_output = Image::new(image_input.width(), image_input.height());
+    // info!("Preparing output image buffer");
+    // let image_output = Image::new(image_input.width(), image_input.height());
 
-    Ok((image_input, image_output))
+    Ok(image_input)
 }
 
 /// Convolve the input file by using the given backend.
@@ -47,13 +50,14 @@ pub fn convolve<Backend: ConvolveStrategy, P: AsRef<Path>>(
     output: P,
     kernel: Kernel,
 ) -> Result<()> {
-    let (image_input, mut image_output) = prepare(input)?;
+    let image_input = prepare(input)?;
+    let mut backend = Backend::from((image_input, kernel));
 
     info!("Executing convolution");
-    Backend::convolve(image_input, &mut image_output, kernel)?;
+    backend.convolve()?;
 
-    info!("Converting buffers to RGB8 for saving output");
-    let image_output = DynamicImage::ImageRgb32F(image_output).to_rgb8();
+    info!("Finishing");
+    let image_output = backend.finish()?.to_rgb8();
 
     info!("Saving result");
     image_output.save(output)?;

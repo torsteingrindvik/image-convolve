@@ -1,19 +1,31 @@
+use image::DynamicImage;
 use rayon::prelude::*;
 
-use crate::convolution::util::view3x3;
 use crate::prelude::*;
 
-use super::util::do_convolve;
+use super::util::{do_convolve, view3x3, ImageBuffers};
 
 /// Uses nested iterators, but runs in parallel at the row level.
-pub struct NestedIterators;
+pub struct NestedIterators {
+    buffers: ImageBuffers,
+    kernel: Kernel,
+}
+
+impl From<(DynamicImage, Kernel)> for NestedIterators {
+    fn from((input, kernel): (DynamicImage, Kernel)) -> Self {
+        Self {
+            buffers: ImageBuffers::new(input),
+            kernel,
+        }
+    }
+}
 
 impl ConvolveStrategy for NestedIterators {
-    fn convolve(input: Image, output: &mut Image, kernel: Kernel) -> Result<()> {
-        let width = input.width() as usize;
-        let height = input.height() as usize;
+    fn convolve(&mut self) -> Result<()> {
+        let (width, height) = self.buffers.dimensions();
 
-        output
+        self.buffers
+            .output
             .enumerate_rows_mut()
             .take(height - 1)
             .skip(1)
@@ -23,10 +35,14 @@ impl ConvolveStrategy for NestedIterators {
                     .take(width - 1)
                     .skip(1)
                     .for_each(|(col, row, pixel)| {
-                        do_convolve(kernel, pixel, &*view3x3(&input, row, col))
+                        do_convolve(self.kernel, pixel, &*view3x3(&self.buffers.input, row, col))
                     })
             });
 
         Ok(())
+    }
+
+    fn finish(self) -> Result<DynamicImage> {
+        Ok(self.buffers.output.into())
     }
 }

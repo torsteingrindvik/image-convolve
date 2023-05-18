@@ -2,18 +2,18 @@
 
 use crate::prelude::*;
 
-use image::GenericImageView;
+use image::{DynamicImage, GenericImageView};
 
-use super::BufferDimensions;
+use super::{BufferDimensions, FORMAT};
 
 pub fn prepare(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-    img: &image::DynamicImage,
+    img: DynamicImage,
 ) -> Result<(DiffuseTexture, RenderTexture, OutputBuffer)> {
+    let render_texture = RenderTexture::from_image(device, &img)?;
+    let output_buffer = OutputBuffer::from_image(device, &img)?;
     let texture = DiffuseTexture::from_image(device, queue, img, None)?;
-    let render_texture = RenderTexture::from_image(device, img)?;
-    let output_buffer = OutputBuffer::from_image(device, img)?;
 
     Ok((texture, render_texture, output_buffer))
 }
@@ -24,8 +24,9 @@ pub struct RenderTexture {
     pub extent: wgpu::Extent3d,
 }
 
+
 impl RenderTexture {
-    pub fn from_image(device: &wgpu::Device, img: &image::DynamicImage) -> Result<Self> {
+    pub fn from_image(device: &wgpu::Device, img: &DynamicImage) -> Result<Self> {
         let (width, height) = img.dimensions();
 
         let extent = wgpu::Extent3d {
@@ -33,13 +34,14 @@ impl RenderTexture {
             height,
             depth_or_array_layers: 1,
         };
+
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: extent,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            format: FORMAT,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
@@ -55,7 +57,7 @@ pub struct OutputBuffer {
 }
 
 impl OutputBuffer {
-    pub fn from_image(device: &wgpu::Device, img: &image::DynamicImage) -> Result<Self> {
+    pub fn from_image(device: &wgpu::Device, img: &DynamicImage) -> Result<Self> {
         let (width, height) = img.dimensions();
 
         let dimensions = BufferDimensions::new(width as usize, height as usize);
@@ -81,24 +83,16 @@ pub struct DiffuseTexture {
 }
 
 impl DiffuseTexture {
-    // pub fn from_bytes(
-    //     device: &wgpu::Device,
-    //     queue: &wgpu::Queue,
-    //     bytes: &[u8],
-    //     label: &str,
-    // ) -> Result<Self> {
-    //     let img = image::load_from_memory(bytes)?;
-    //     Self::from_image(device, queue, &img, Some(label))
-    // }
-
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        img: &image::DynamicImage,
+        img: DynamicImage,
         label: Option<&str>,
     ) -> Result<Self> {
-        let rgba = img.to_rgba8();
         let (width, height) = img.dimensions();
+
+        // TODO: This is probably expensive?
+        let rgba = DynamicImage::ImageRgb32F(img).into_rgba8();
 
         let size = wgpu::Extent3d {
             width,
@@ -113,6 +107,7 @@ impl DiffuseTexture {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format,
+            // Need to be able to use this in a shader (by binding), as well as using `write_texture` on it to load data.
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
@@ -142,7 +137,6 @@ impl DiffuseTexture {
             // We don't want to affect results by doing filtering.
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
 

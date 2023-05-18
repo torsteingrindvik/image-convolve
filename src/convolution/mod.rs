@@ -29,14 +29,11 @@ pub mod backends {
 
     /// GPU based convolution.
     pub mod gpu {
-        /// Convolution via a normal GPU pipeline.
-        pub mod render;
+        // Convolution via a offscreen GPU pipeline.
+        // pub mod offscreen;
     }
 }
 
 /// Holds the common trait for backends,
 /// as well as the strategy implementation.
 pub mod strategy;
-
-/// Utilities for helping convolution.
-pub(crate) mod util;
