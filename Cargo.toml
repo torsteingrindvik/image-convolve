@@ -25,11 +25,6 @@ wgpu = "0.16.0"
 # wgpu has async operations
 tokio = { version = "1.28.1", features = ["rt-multi-thread", "macros", "sync"] }
 
-# Temporary..
-png = "0.17.8"
-bytemuck = { version = "1.13.1", features = ["derive"] }
-winit = "0.28.6"
-
 [dev-dependencies]
 # benchmarking
 criterion = { version = "0.4.0", features = ["html_reports"] }
