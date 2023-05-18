@@ -10,7 +10,7 @@ use crate::prelude::*;
 
 /// The common strategy convolution "backends" should implement.
 /// Backends will be driven by calling prepare, convolve, and finish in that order.
-pub trait ConvolveStrategy: From<(DynamicImage, Kernel)> {
+pub trait ConvolveStrategy {
     /// Prepare the input image for convolution with the given
     /// kernel.
     // fn prepare(&mut self, input: DynamicImage, kernel: Kernel) -> Result<()>;
@@ -46,12 +46,13 @@ pub fn prepare<P: AsRef<Path>>(input: P) -> Result<DynamicImage> {
 
 /// Convolve the input file by using the given backend.
 pub fn convolve<Backend: ConvolveStrategy, P: AsRef<Path>>(
-    input: P,
+    mut backend: Backend,
+    // input: P,
     output: P,
-    kernel: Kernel,
+    // kernel: Kernel,
 ) -> Result<()> {
-    let image_input = prepare(input)?;
-    let mut backend = Backend::from((image_input, kernel));
+    // let image_input = prepare(input)?;
+    // let mut backend = Backend::from((image_input, kernel));
 
     info!("Executing convolution");
     backend.convolve()?;

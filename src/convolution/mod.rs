@@ -32,7 +32,7 @@ pub mod backends {
 
     /// GPU based convolution.
     pub mod gpu {
-        // Convolution via a offscreen GPU pipeline.
+        /// Convolution via an offscreen GPU pipeline.
         pub mod offscreen;
     }
 }

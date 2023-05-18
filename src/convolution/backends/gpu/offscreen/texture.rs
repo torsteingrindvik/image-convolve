@@ -1,9 +1,5 @@
-//! Adapted from (here)[https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/]
-
 use crate::prelude::*;
-
 use image::{DynamicImage, GenericImageView};
-
 use super::{BufferDimensions, FORMAT};
 
 pub fn prepare(
@@ -24,7 +20,6 @@ pub struct RenderTexture {
     pub view: wgpu::TextureView,
     pub extent: wgpu::Extent3d,
 }
-
 
 impl RenderTexture {
     pub fn from_image(device: &wgpu::Device, img: &DynamicImage) -> Result<Self> {
