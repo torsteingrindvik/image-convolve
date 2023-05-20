@@ -1,5 +1,10 @@
 # Image Convolve
 
+![cat-original](./images/1280x720.jpg)
+![cat-sharpen](./images/processed/1280x720-sharpen.jpg)
+![cat-edge-detection2](./images/processed/1280x720-edge-detection2.jpg)
+
+
 ## TL;DR 
 
 ### Installation
