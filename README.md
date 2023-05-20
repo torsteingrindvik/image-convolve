@@ -7,6 +7,11 @@
 
 ## TL;DR 
 
+This CLI tool lets you perform some 3x3 convolutions on images, choosing
+between using CPU single- or multi-threaded, or GPU in an offscreen render pipeline.
+
+Benchmarks are ready for comparing the speed of the different backends.
+
 ### Installation
 
 ```norust
